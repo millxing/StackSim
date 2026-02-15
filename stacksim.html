@@ -1,0 +1,701 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pickleball Stack Sim Quiz</title>
+  <style>
+    :root {
+      --bg-1: #f5f8fb;
+      --bg-2: #e6f0ea;
+      --ink: #12232e;
+      --accent: #0f766e;
+      --card: #ffffff;
+      --ok: #166534;
+      --bad: #991b1b;
+      --muted: #4b5563;
+      --ring: #0f766e44;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 700px at 10% -20%, #d8efe7 10%, transparent 60%),
+        radial-gradient(900px 600px at 100% 0%, #dbe9ff 0%, transparent 55%),
+        linear-gradient(130deg, var(--bg-1), var(--bg-2));
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .app {
+      width: min(860px, 100%);
+      background: color-mix(in oklab, var(--card) 92%, #ffffff);
+      border: 1px solid #d1d5db;
+      border-radius: 18px;
+      box-shadow: 0 15px 45px #0b172520;
+      overflow: hidden;
+    }
+
+    .top {
+      padding: 22px 22px 16px;
+      background: linear-gradient(125deg, #f0fdf4, #eff6ff);
+      border-bottom: 1px solid #d1d5db;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.2rem, 3.5vw, 1.7rem);
+      letter-spacing: 0.01em;
+    }
+
+    .subtitle {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .stats {
+      margin-top: 14px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      font-size: 0.92rem;
+    }
+
+    .chip {
+      background: #ffffffcc;
+      border: 1px solid #d1d5db;
+      border-radius: 999px;
+      padding: 4px 10px;
+    }
+
+    .body {
+      padding: 22px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .scenario {
+      background: #f9fafb;
+      border: 1px solid #d1d5db;
+      border-radius: 14px;
+      padding: 14px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .scenario-row {
+      display: flex;
+      gap: 10px;
+      align-items: baseline;
+      flex-wrap: wrap;
+    }
+
+    .label {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .value {
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      font-size: 1.07rem;
+    }
+
+    .question {
+      border: 1px solid #d1d5db;
+      border-radius: 14px;
+      padding: 14px;
+      background: #fff;
+    }
+
+    .q-title {
+      margin: 0 0 12px;
+      font-size: 1rem;
+    }
+
+    .options {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      color: var(--ink);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: transform 120ms ease, box-shadow 140ms ease, border-color 140ms ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px #0f172a14;
+    }
+
+    button.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--ring);
+      background: #f0fdfa;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: color-mix(in oklab, var(--accent), #000 12%);
+    }
+
+    .secondary {
+      background: #0f172a;
+      color: #fff;
+      border-color: #0f172a;
+    }
+
+    .ghost {
+      background: #f8fafc;
+      color: #0f172a;
+    }
+
+    .feedback {
+      min-height: 1.4em;
+      font-size: 0.96rem;
+      line-height: 1.35;
+    }
+
+    .feedback.ok {
+      color: var(--ok);
+    }
+
+    .feedback.bad {
+      color: var(--bad);
+    }
+
+    .hint-inline {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: #07131fd9;
+      color: #e7edf3;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 999;
+    }
+
+    .overlay.show {
+      display: flex;
+    }
+
+    .overlay-card {
+      width: min(860px, 100%);
+      border: 1px solid #475569;
+      border-radius: 14px;
+      padding: 18px;
+      background: #0f172a;
+      box-shadow: 0 20px 60px #00000066;
+    }
+
+    .overlay h2 {
+      margin: 0 0 8px;
+      font-size: 1.12rem;
+    }
+
+    .overlay p {
+      margin: 8px 0;
+      line-height: 1.4;
+      color: #d1d5db;
+    }
+
+    .overlay ol {
+      margin: 8px 0 0 20px;
+      padding: 0;
+      line-height: 1.45;
+    }
+
+    .overlay li {
+      margin: 6px 0;
+    }
+
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.94em;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 12px;
+      }
+
+      .top,
+      .body {
+        padding: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="top">
+      <h1>Pickleball Stack Sim (Serve-by-Serve)</h1>
+      <div class="subtitle">
+        Simulates full games (side-out scoring). You started on the left (starting #2). Third score number is service number. Answers are always in your left/right perspective.
+      </div>
+      <div class="stats">
+        <span class="chip">Asked: <strong id="asked">0</strong></span>
+        <span class="chip">Correct: <strong id="correct">0</strong></span>
+        <span class="chip">Streak: <strong id="streak">0</strong></span>
+        <span class="chip">Game: <strong id="game-no">1</strong></span>
+      </div>
+    </section>
+
+    <section class="body">
+      <div class="scenario" aria-live="polite">
+        <div class="scenario-row">
+          <span class="label">Serving team:</span>
+          <span id="serving-team" class="value"></span>
+        </div>
+        <div class="scenario-row">
+          <span class="label">Score (serving team first):</span>
+          <span id="score-call" class="value mono"></span>
+        </div>
+        <div class="scenario-row">
+          <span class="label">Game score (my team first):</span>
+          <span id="game-score" class="value mono"></span>
+        </div>
+        <div class="scenario-row">
+          <span class="label">Serve # in this game:</span>
+          <span id="serve-count" class="value"></span>
+        </div>
+        <div class="scenario-row">
+          <span class="label">Last rally:</span>
+          <span id="last-rally" class="value" style="font-weight:600;"></span>
+        </div>
+      </div>
+
+      <div class="question">
+        <p id="q1-title" class="q-title">1) What side of the court should I be on?</p>
+        <div id="q1-options" class="options"></div>
+      </div>
+
+      <div class="question">
+        <p id="q2-title" class="q-title"></p>
+        <div id="q2-options" class="options"></div>
+      </div>
+
+      <div class="actions">
+        <button id="check" class="primary">Check Answer</button>
+        <button id="rally" class="secondary" style="display:none;">Play Rally</button>
+        <button id="new-game" class="ghost">Start New Game</button>
+      </div>
+
+      <div id="feedback" class="feedback"></div>
+      <div class="hint-inline">Press and hold <span class="mono">h</span> to show the algorithm for the current serve.</div>
+    </section>
+  </main>
+
+  <aside id="overlay" class="overlay" aria-hidden="true">
+    <div class="overlay-card">
+      <h2>Hold-H Hint</h2>
+      <p id="overlay-summary"></p>
+      <ol id="overlay-steps"></ol>
+      <p>Release <span class="mono">h</span> to hide this.</p>
+    </div>
+  </aside>
+
+  <script>
+    const TEAM_MINE = 'mine';
+    const TEAM_OTHER = 'other';
+
+    const state = {
+      asked: 0,
+      correct: 0,
+      streak: 0,
+      gameNo: 1,
+      picks: { side: null, person: null },
+      locked: false,
+      game: null,
+      current: null,
+      lastRallyText: 'Game started.'
+    };
+
+    const els = {
+      asked: document.getElementById('asked'),
+      correct: document.getElementById('correct'),
+      streak: document.getElementById('streak'),
+      gameNo: document.getElementById('game-no'),
+      servingTeam: document.getElementById('serving-team'),
+      scoreCall: document.getElementById('score-call'),
+      gameScore: document.getElementById('game-score'),
+      serveCount: document.getElementById('serve-count'),
+      lastRally: document.getElementById('last-rally'),
+      q2Title: document.getElementById('q2-title'),
+      q1Options: document.getElementById('q1-options'),
+      q2Options: document.getElementById('q2-options'),
+      check: document.getElementById('check'),
+      rally: document.getElementById('rally'),
+      newGame: document.getElementById('new-game'),
+      feedback: document.getElementById('feedback'),
+      overlay: document.getElementById('overlay'),
+      overlaySummary: document.getElementById('overlay-summary'),
+      overlaySteps: document.getElementById('overlay-steps')
+    };
+
+    function otherTeam(team) {
+      return team === TEAM_MINE ? TEAM_OTHER : TEAM_MINE;
+    }
+
+    function flipSide(side) {
+      return side === 'left' ? 'right' : 'left';
+    }
+
+    function startingSideForScore(startingNumber, teamScore) {
+      const start1Side = teamScore % 2 === 0 ? 'right' : 'left';
+      if (startingNumber === 1) return start1Side;
+      return flipSide(start1Side);
+    }
+
+    function sideToMyView(team, sideFromTeamView) {
+      if (team === TEAM_MINE) return sideFromTeamView;
+      return flipSide(sideFromTeamView);
+    }
+
+    function isGameOver(game) {
+      const max = Math.max(game.myScore, game.oppScore);
+      return max >= 11 && Math.abs(game.myScore - game.oppScore) >= 2;
+    }
+
+    function isOpeningSingleServe(game) {
+      return game.openingSingleActive && game.servingTeam === game.startingTeam;
+    }
+
+    function setRotationStart(game, team) {
+      game.servingTeam = team;
+      const teamScore = team === TEAM_MINE ? game.myScore : game.oppScore;
+      game.firstServerStarting = teamScore % 2 === 0 ? 1 : 2;
+      game.serviceNumber = 1;
+    }
+
+    function currentServerStartingNumber(game) {
+      if (isOpeningSingleServe(game)) return 1;
+      if (game.serviceNumber === 1) return game.firstServerStarting;
+      return game.firstServerStarting === 1 ? 2 : 1;
+    }
+
+    function scoreForTeam(game, team) {
+      return team === TEAM_MINE ? game.myScore : game.oppScore;
+    }
+
+    function addPoint(game, team) {
+      if (team === TEAM_MINE) game.myScore += 1;
+      else game.oppScore += 1;
+    }
+
+    function startingNumberLabel(n) {
+      return `starting #${n}`;
+    }
+
+    function buildServeState(game) {
+      const servingTeam = game.servingTeam;
+      const receivingTeam = otherTeam(servingTeam);
+      const servingScore = scoreForTeam(game, servingTeam);
+      const receivingScore = scoreForTeam(game, receivingTeam);
+      const serviceNumber = game.serviceNumber;
+
+      const myStartingNumber = 2;
+      const mySide = startingSideForScore(myStartingNumber, game.myScore);
+
+      const serverStarting = currentServerStartingNumber(game);
+      const serverTeamSide = startingSideForScore(serverStarting, servingScore);
+      const serveFrom = sideToMyView(servingTeam, serverTeamSide);
+
+      if (servingTeam === TEAM_MINE) {
+        const person = serverStarting === 2 ? 'me' : 'partner';
+        return {
+          servingTeam,
+          servingScore,
+          receivingScore,
+          serviceNumber,
+          mySide,
+          serveFrom,
+          serverStarting,
+          person,
+          side: mySide,
+          isOpeningSingle: isOpeningSingleServe(game),
+          firstServerStarting: game.firstServerStarting,
+          scoreCall: `${servingScore}-${receivingScore}-${serviceNumber}`
+        };
+      }
+
+      const receiverSide = flipSide(serveFrom);
+      const person = mySide === receiverSide ? 'me' : 'partner';
+      return {
+        servingTeam,
+        servingScore,
+        receivingScore,
+        serviceNumber,
+        mySide,
+        serveFrom,
+        receiverSide,
+        serverStarting,
+        person,
+        side: mySide,
+        isOpeningSingle: isOpeningSingleServe(game),
+        firstServerStarting: game.firstServerStarting,
+        scoreCall: `${servingScore}-${receivingScore}-${serviceNumber}`
+      };
+    }
+
+    function newGame() {
+      const startingTeam = Math.random() < 0.5 ? TEAM_MINE : TEAM_OTHER;
+      state.game = {
+        myScore: 0,
+        oppScore: 0,
+        servingTeam: startingTeam,
+        startingTeam,
+        openingSingleActive: true,
+        serviceNumber: 2,
+        firstServerStarting: 1,
+        serveCount: 1
+      };
+
+      state.lastRallyText = `New game started. ${startingTeam === TEAM_MINE ? 'My team' : 'Other team'} starts serving at 0-0-2.`;
+      setupServe();
+    }
+
+    function renderStats() {
+      els.asked.textContent = state.asked;
+      els.correct.textContent = state.correct;
+      els.streak.textContent = state.streak;
+      els.gameNo.textContent = state.gameNo;
+    }
+
+    function buttonGroup(container, options, key) {
+      container.innerHTML = '';
+      options.forEach((value) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        if (value === 'me') btn.textContent = 'Me';
+        else if (value === 'partner') btn.textContent = 'Partner';
+        else btn.textContent = `My ${value[0].toUpperCase()}${value.slice(1)}`;
+
+        if (state.picks[key] === value) btn.classList.add('selected');
+
+        btn.addEventListener('click', () => {
+          if (state.locked) return;
+          state.picks[key] = value;
+          buttonGroup(container, options, key);
+        });
+
+        container.appendChild(btn);
+      });
+    }
+
+    function renderOverlayHint() {
+      const s = state.current;
+      if (!s) return;
+
+      const teamLabel = s.servingTeam === TEAM_MINE ? 'My team is serving.' : 'Other team is serving.';
+      els.overlaySummary.textContent = `${teamLabel} Current call: ${s.scoreCall}.`;
+
+      const steps = [];
+      steps.push('All sides below are your left/right.');
+      steps.push('Starting numbers are fixed: starting #1 originally began right, starting #2 originally began left (each team perspective).');
+      steps.push('Third score number is service number in this service rotation, not starting number.');
+
+      if (s.isOpeningSingle) {
+        steps.push('Opening exception active (0-0-2 rotation): starting #1 is the only server for this first rotation.');
+      } else {
+        steps.push(`Current first server for this rotation is ${startingNumberLabel(s.firstServerStarting)}.`);
+        steps.push(`Service #${s.serviceNumber} means current server is ${startingNumberLabel(s.serverStarting)}.`);
+      }
+
+      steps.push(`Server is correctly positioned by serving-team score ${s.servingScore}, so serve comes from your ${s.serveFrom}.`);
+      steps.push(`Your score is ${state.game.myScore}, so you should be on your ${s.mySide}.`);
+
+      if (s.servingTeam === TEAM_OTHER) {
+        steps.push(`Receiver is opposite the serve origin, so receiving side is your ${s.receiverSide}.`);
+        steps.push(`If your side matches that side, you receive.`);
+      }
+
+      els.overlaySteps.innerHTML = '';
+      steps.forEach((text) => {
+        const li = document.createElement('li');
+        li.textContent = text;
+        els.overlaySteps.appendChild(li);
+      });
+    }
+
+    function setupServe() {
+      state.current = buildServeState(state.game);
+      state.picks = { side: null, person: null };
+      state.locked = false;
+
+      const s = state.current;
+      els.servingTeam.textContent = s.servingTeam === TEAM_MINE ? 'My Team' : 'Other Team';
+      els.scoreCall.textContent = s.scoreCall;
+      els.gameScore.textContent = `${state.game.myScore}-${state.game.oppScore}`;
+      els.serveCount.textContent = state.game.serveCount;
+      els.lastRally.textContent = state.lastRallyText;
+
+      if (s.servingTeam === TEAM_MINE) {
+        els.q2Title.textContent = '2) Who is serving for our team?';
+      } else {
+        els.q2Title.textContent = '2) Who on our team is receiving this serve?';
+      }
+
+      buttonGroup(els.q1Options, ['left', 'right'], 'side');
+      buttonGroup(els.q2Options, ['me', 'partner'], 'person');
+
+      els.feedback.textContent = '';
+      els.feedback.className = 'feedback';
+      els.check.style.display = '';
+      els.rally.style.display = 'none';
+
+      renderOverlayHint();
+      renderStats();
+    }
+
+    function explanation(correctSide, correctPerson) {
+      const s = state.current;
+      const roleText = s.servingTeam === TEAM_MINE
+        ? (correctPerson === 'me' ? 'you serve' : 'your partner serves')
+        : (correctPerson === 'me' ? 'you receive' : 'your partner receives');
+
+      const opening = s.isOpeningSingle
+        ? 'Opening exception: 0-0-2 uses starting #1 as the only server in that first rotation. '
+        : `Rotation first server is ${startingNumberLabel(s.firstServerStarting)}, so service #${s.serviceNumber} is ${startingNumberLabel(s.serverStarting)}. `;
+
+      if (s.servingTeam === TEAM_MINE) {
+        return `Correct: you should be on your ${correctSide}, and ${roleText}. ` +
+          `${opening}Server comes from your ${s.serveFrom}. Your score ${state.game.myScore} puts you on your ${s.mySide}.`;
+      }
+
+      return `Correct: you should be on your ${correctSide}, and ${roleText}. ` +
+        `${opening}Serve comes from your ${s.serveFrom}, so receiver side is your ${s.receiverSide}. Your score ${state.game.myScore} puts you on your ${s.mySide}.`;
+    }
+
+    function checkAnswer() {
+      if (state.locked) return;
+      if (!state.picks.side || !state.picks.person) {
+        els.feedback.textContent = 'Pick answers for both questions first.';
+        els.feedback.className = 'feedback bad';
+        return;
+      }
+
+      const correctSide = state.current.side;
+      const correctPerson = state.current.person;
+      const ok = state.picks.side === correctSide && state.picks.person === correctPerson;
+
+      state.asked += 1;
+      if (ok) {
+        state.correct += 1;
+        state.streak += 1;
+        els.feedback.className = 'feedback ok';
+      } else {
+        state.streak = 0;
+        els.feedback.className = 'feedback bad';
+      }
+
+      els.feedback.textContent = `${ok ? 'Nice. ' : 'Not quite. '}${explanation(correctSide, correctPerson)}`;
+
+      state.locked = true;
+      els.check.style.display = 'none';
+      els.rally.style.display = '';
+      renderStats();
+    }
+
+    function playRally() {
+      const rallyWinner = Math.random() < 0.5 ? TEAM_MINE : TEAM_OTHER;
+      const servingTeam = state.game.servingTeam;
+      const wasOpening = isOpeningSingleServe(state.game);
+
+      if (rallyWinner === servingTeam) {
+        addPoint(state.game, servingTeam);
+        state.lastRallyText = `${servingTeam === TEAM_MINE ? 'My team' : 'Other team'} won the rally and scored.`;
+      } else if (wasOpening) {
+        state.game.openingSingleActive = false;
+        const next = otherTeam(servingTeam);
+        setRotationStart(state.game, next);
+        state.lastRallyText = `${servingTeam === TEAM_MINE ? 'My team' : 'Other team'} lost opening serve. Side out.`;
+      } else if (state.game.serviceNumber === 1) {
+        state.game.serviceNumber = 2;
+        state.lastRallyText = `${servingTeam === TEAM_MINE ? 'My team' : 'Other team'} lost rally. Serve passed to service #2.`;
+      } else {
+        const next = otherTeam(servingTeam);
+        setRotationStart(state.game, next);
+        state.lastRallyText = `${servingTeam === TEAM_MINE ? 'My team' : 'Other team'} lost as service #2. Side out.`;
+      }
+
+      if (isGameOver(state.game)) {
+        const winner = state.game.myScore > state.game.oppScore ? 'My Team' : 'Other Team';
+        state.lastRallyText = `${winner} won game ${state.gameNo} (${state.game.myScore}-${state.game.oppScore}). New game started.`;
+        state.gameNo += 1;
+        newGame();
+        return;
+      }
+
+      state.game.serveCount += 1;
+      setupServe();
+    }
+
+    function showOverlay() {
+      renderOverlayHint();
+      els.overlay.classList.add('show');
+      els.overlay.setAttribute('aria-hidden', 'false');
+    }
+
+    function hideOverlay() {
+      els.overlay.classList.remove('show');
+      els.overlay.setAttribute('aria-hidden', 'true');
+    }
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key.toLowerCase() === 'h') showOverlay();
+    });
+
+    document.addEventListener('keyup', (event) => {
+      if (event.key.toLowerCase() === 'h') hideOverlay();
+    });
+
+    window.addEventListener('blur', hideOverlay);
+
+    els.check.addEventListener('click', checkAnswer);
+    els.rally.addEventListener('click', playRally);
+    els.newGame.addEventListener('click', () => {
+      state.gameNo += 1;
+      newGame();
+    });
+
+    newGame();
+  </script>
+</body>
+</html>
